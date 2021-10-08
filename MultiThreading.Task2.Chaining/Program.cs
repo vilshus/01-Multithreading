@@ -27,13 +27,13 @@ namespace MultiThreading.Task2.Chaining
             Console.WriteLine("Fourth Task – calculates the average value. All this tasks should print the values to console");
             Console.WriteLine();
 
-            var task = new Task<int[]>(CreateRandomArray);
-            task.ContinueWith(previousTask => MultiplyByRandomNumber(previousTask.Result))
+            var parentTask = new Task<int[]>(CreateRandomArray);
+            var finalTask = parentTask.ContinueWith(previousTask => MultiplyByRandomNumber(previousTask.Result))
                 .ContinueWith(previousTask => OrderArrayAscending(previousTask.Result))
                 .ContinueWith(previousTask => CalculateAverage(previousTask.Result));
 
-            task.Start();
-            task.Wait();
+            parentTask.Start();
+            finalTask.Wait();
 
             Console.ReadLine();
         }
