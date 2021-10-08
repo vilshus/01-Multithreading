@@ -6,11 +6,17 @@
  * Fourth Task – calculates the average value. All this tasks should print the values to console.
  */
 using System;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace MultiThreading.Task2.Chaining
 {
     class Program
     {
+        private const int ArraySize = 10;
+
+        private static readonly Random Random = new Random();
+
         static void Main(string[] args)
         {
             Console.WriteLine(".Net Mentoring Program. MultiThreading V1 ");
@@ -21,9 +27,62 @@ namespace MultiThreading.Task2.Chaining
             Console.WriteLine("Fourth Task – calculates the average value. All this tasks should print the values to console");
             Console.WriteLine();
 
-            // feel free to add your code
+            var task = new Task<int[]>(CreateRandomArray);
+            task.ContinueWith(previousTask => MultiplyByRandomNumber(previousTask.Result))
+                .ContinueWith(previousTask => OrderArrayAscending(previousTask.Result))
+                .ContinueWith(previousTask => CalculateAverage(previousTask.Result));
+
+            task.Start();
+            task.Wait();
 
             Console.ReadLine();
+        }
+
+        private static int[] CreateRandomArray()
+        {
+            Console.WriteLine("Task 1");
+            var integerNumbers = new int[ArraySize];
+            for (int i = 0; i < integerNumbers.Length; i++)
+            {
+                integerNumbers[i] = Random.Next(1000);
+                Console.WriteLine(integerNumbers[i]);
+            }
+            Console.WriteLine();
+            return integerNumbers;
+        }
+
+        private static int[] MultiplyByRandomNumber(int[] integerNumbers)
+        {
+            Console.WriteLine("Task 2");
+            var randomNumber = Random.Next(1000);
+            for (int i = 0; i < integerNumbers.Length; i++)
+            {
+                integerNumbers[i] = integerNumbers[i] * randomNumber;
+                Console.WriteLine(integerNumbers[i]);
+            }
+            Console.WriteLine();
+            return integerNumbers;
+        }
+
+        private static int[] OrderArrayAscending(int[] integerNumbers)
+        {
+            Console.WriteLine("Task 3");
+            integerNumbers = integerNumbers.OrderBy(x => x).ToArray();
+            foreach (var number in integerNumbers)
+            {
+                Console.WriteLine(number);
+            }
+            Console.WriteLine();
+            return integerNumbers;
+        }
+
+        private static double CalculateAverage(int[] integerNumbers)
+        {
+            Console.WriteLine("Task 4");
+            var average = integerNumbers.Average();
+            Console.WriteLine(average);
+            Console.WriteLine();
+            return average;
         }
     }
 }
