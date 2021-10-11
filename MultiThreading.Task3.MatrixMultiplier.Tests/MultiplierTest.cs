@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using MultiThreading.Task3.MatrixMultiplier.Matrices;
 using MultiThreading.Task3.MatrixMultiplier.Multipliers;
@@ -18,8 +19,42 @@ namespace MultiThreading.Task3.MatrixMultiplier.Tests
         [TestMethod]
         public void ParallelEfficiencyTest()
         {
-            // todo: implement a test method to check the size of the matrix which makes parallel multiplication more effective than
-            // todo: the regular one
+
+            long executionTimeNormal;
+            long executionTimeParallel;
+            var normalMultiplier = new MatricesMultiplier();
+            var parallelMultiplier = new MatricesMultiplierParallel();
+            long matrixSize = 0;
+
+            do
+            {
+                executionTimeNormal = 0;
+                executionTimeParallel = 0;
+                matrixSize++;
+                //for more consistency perform several iterations
+                for (int i = 0; i < 10; i++)
+                {
+                    var m1 = new Matrix(matrixSize, matrixSize, true);
+                    var m2 = new Matrix(matrixSize, matrixSize, true);
+                    var watch = new Stopwatch();
+
+                    //normal multiplication
+                    watch.Start();
+                    normalMultiplier.Multiply(m1, m2);
+                    watch.Stop();
+                    executionTimeNormal += watch.ElapsedTicks;
+
+                    //parallel multiplication
+                    watch.Reset();
+                    watch.Start();
+                    parallelMultiplier.Multiply(m1, m2);
+                    watch.Stop();
+                    executionTimeParallel += watch.ElapsedTicks;
+                }
+                
+            } while (executionTimeNormal < executionTimeParallel && matrixSize < 100);
+
+            Debug.Print($"Size of matrices when parallel is faster: {matrixSize}");
         }
 
         #region private methods
