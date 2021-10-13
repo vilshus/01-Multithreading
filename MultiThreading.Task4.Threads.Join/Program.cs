@@ -10,11 +10,14 @@
  */
 
 using System;
+using System.Threading;
 
 namespace MultiThreading.Task4.Threads.Join
 {
     class Program
     {
+        private static readonly Semaphore DecrementIntegerAccessControl = new Semaphore(0, 1);
+
         static void Main(string[] args)
         {
             Console.WriteLine("4.	Write a program which recursively creates 10 threads.");
@@ -25,10 +28,47 @@ namespace MultiThreading.Task4.Threads.Join
             Console.WriteLine("- b) ThreadPool class for this task and Semaphore for waiting threads.");
 
             Console.WriteLine();
+            Console.WriteLine("a) Implementing with Join");
+            DecrementIntegerWorkTaskWithJoin(10);
 
-            // feel free to add your code
+            Console.WriteLine();
+            Console.WriteLine("b) Implementing with ThreadPool and Semaphore");
+            DecrementIntegerWorkTaskWithSemaphore(10);
 
-            Console.ReadLine();
+            Console.ReadKey();
+        }
+
+        private static void DecrementIntegerWorkTaskWithJoin(int counter)
+        {
+            if (counter <= 0)
+            {
+                return;
+            }
+
+            var thread = new Thread(() => {
+                counter--;
+                Console.WriteLine($"Thread {Thread.CurrentThread.ManagedThreadId} decremented the number to {counter}");
+            });
+            thread.Start();
+            thread.Join();
+            DecrementIntegerWorkTaskWithJoin(counter);
+        }
+
+        private static void DecrementIntegerWorkTaskWithSemaphore(int counter)
+        {
+            if (counter <= 0)
+            {
+                return;
+            }
+
+            ThreadPool.QueueUserWorkItem(x => {
+                counter--;
+                Console.WriteLine($"Thread {Thread.CurrentThread.ManagedThreadId} decremented the number to {counter}");
+                DecrementIntegerAccessControl.Release(1);
+            });
+
+            DecrementIntegerAccessControl.WaitOne();
+            DecrementIntegerWorkTaskWithSemaphore(counter);
         }
     }
 }
