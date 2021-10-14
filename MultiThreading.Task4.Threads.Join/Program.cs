@@ -16,7 +16,7 @@ namespace MultiThreading.Task4.Threads.Join
 {
     class Program
     {
-        private static readonly Semaphore DecrementIntegerAccessControl = new Semaphore(0, 1);
+        private static readonly Semaphore ThreadPoolWorkFinished = new Semaphore(0, 1);
 
         static void Main(string[] args)
         {
@@ -29,46 +29,49 @@ namespace MultiThreading.Task4.Threads.Join
 
             Console.WriteLine();
             Console.WriteLine("a) Implementing with Join");
-            DecrementIntegerWorkTaskWithJoin(10);
+            var thread = DecrementIntegerWorkTaskWithJoin(10);
+            thread.Start();
+            thread.Join();
 
             Console.WriteLine();
             Console.WriteLine("b) Implementing with ThreadPool and Semaphore");
             DecrementIntegerWorkTaskWithSemaphore(10);
+            ThreadPoolWorkFinished.WaitOne();
 
+            Console.WriteLine("Work finished!");
             Console.ReadKey();
         }
 
-        private static void DecrementIntegerWorkTaskWithJoin(int counter)
+        private static Thread DecrementIntegerWorkTaskWithJoin(int counter)
         {
-            if (counter <= 0)
+            return new Thread(() =>
             {
-                return;
-            }
-
-            var thread = new Thread(() => {
                 counter--;
                 Console.WriteLine($"Thread {Thread.CurrentThread.ManagedThreadId} decremented the number to {counter}");
+                if (counter > 0)
+                {
+                    var thread = DecrementIntegerWorkTaskWithJoin(counter);
+                    thread.Start();
+                    thread.Join();
+                }
             });
-            thread.Start();
-            thread.Join();
-            DecrementIntegerWorkTaskWithJoin(counter);
         }
 
         private static void DecrementIntegerWorkTaskWithSemaphore(int counter)
         {
-            if (counter <= 0)
+            ThreadPool.QueueUserWorkItem(x =>
             {
-                return;
-            }
-
-            ThreadPool.QueueUserWorkItem(x => {
                 counter--;
                 Console.WriteLine($"Thread {Thread.CurrentThread.ManagedThreadId} decremented the number to {counter}");
-                DecrementIntegerAccessControl.Release(1);
+                if (counter > 0)
+                {
+                    ThreadPool.QueueUserWorkItem(y => DecrementIntegerWorkTaskWithSemaphore(counter));
+                }
+                else
+                {
+                    ThreadPoolWorkFinished.Release(1);
+                }
             });
-
-            DecrementIntegerAccessControl.WaitOne();
-            DecrementIntegerWorkTaskWithSemaphore(counter);
         }
     }
 }
