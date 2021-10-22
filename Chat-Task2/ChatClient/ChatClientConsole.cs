@@ -3,10 +3,8 @@ using System.Collections.Generic;
 using System.IO.Pipes;
 using System.Security.Principal;
 using System.Text.Json;
-using System.Threading;
 using System.Threading.Tasks;
 using ChatLib;
-using Microsoft.VisualBasic;
 
 namespace ChatClient
 {
@@ -158,10 +156,11 @@ namespace ChatClient
 
         private void DisplayMessage(Message message)
         {
-            if (User.Name != "User 5" && User.Name != "User 4")
+            // for debugging
+            /*if (User.Name != "User 5" && User.Name != "User 4")
             {
                 return;
-            }
+            }*/
 
             lock (_consoleLock)
             {

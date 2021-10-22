@@ -19,15 +19,18 @@ namespace ChatServer
         private static extern bool SetConsoleCtrlHandler(ConsoleEventDelegate callback, bool add);
 
         private static object _consoleLock = new object();
-        private static object _newMessagesLock = new object();
+        private static Dictionary<NamedPipeServerStream, object> _writeLock = new Dictionary<NamedPipeServerStream, object>();
 
         private static List<Message> _chatHistory = new List<Message>();
-        private static Dictionary<Guid, List<Message>> _clientNewMessages = new Dictionary<Guid, List<Message>>();
-        private static Dictionary<NamedPipeServerStream, object> _writeLock = new Dictionary<NamedPipeServerStream, object>();
 
         private static List<UserServerConnection> _activeUserConnections = new List<UserServerConnection>();
 
         private UserServerConnection _userConnection;
+
+        static ChatClientConnection()
+        {
+            SetConsoleCtrlHandler(ConsoleEventCallback, true);
+        }
 
         public bool EstablishConnection(User clientUser)
         {
@@ -42,10 +45,9 @@ namespace ChatServer
                 _userConnection.User = clientUser;
                 _activeUserConnections.Add(_userConnection);
 
-                lock (_newMessagesLock)
+                lock (_writeLock)
                 {
                     _writeLock.Add(_userConnection.SendPipe, new object());
-                    _clientNewMessages.Add(_userConnection.User.Id, new List<Message>());
                 }
 
                 return true;
@@ -82,10 +84,11 @@ namespace ChatServer
 
         public void DisconnectClient()
         {
-            lock (_newMessagesLock)
+            lock (_writeLock)
             {
-                _clientNewMessages.Remove(_userConnection.User.Id);
+                _writeLock.Remove(_userConnection.SendPipe);
             }
+
             _activeUserConnections.Remove(_userConnection);
             _userConnection.ReceivePipe.Close();
             _userConnection.ReceivePipe.Dispose();
@@ -130,31 +133,13 @@ namespace ChatServer
         {
             foreach (var activeUserConnection in _activeUserConnections)
             {
-                //Task.Run(() => SendNewMessages(activeUserConnection.SendPipe, _userConnection.User));
-
                 Task.Run(() => SendMessages(activeUserConnection.SendPipe, new List<Message> { message }));
             }
         }
 
         private static void RegisterMessage(Message message)
         {
-            lock (_newMessagesLock)
-            {
-                _chatHistory.Add(message);
-                foreach (var userNewMessages in _clientNewMessages)
-                {
-                    userNewMessages.Value.Add(message);
-                }
-            }
-        }
-
-        private void SendNewMessages(NamedPipeServerStream pipeServerStream, User user)
-        {
-            lock (_newMessagesLock)
-            {
-                SendMessages(pipeServerStream, _clientNewMessages[user.Id]);
-                _clientNewMessages[user.Id].Clear();
-            }
+            _chatHistory.Add(message);
         }
 
         private void SendMessages(NamedPipeServerStream pipeServerStream, List<Message> messages)

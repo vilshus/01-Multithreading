@@ -25,20 +25,21 @@ namespace ChatClient
 
         public void DoWork()
         {
-            /*while (true)
+            while (true)
             {
                 Task.Run(NewClient);
                 Thread.Sleep(1000); //launch new client connection every 1 sec
-            }*/
+            }
 
-            var tasks = new List<Task>();
+            // for debugging
+            /*var tasks = new List<Task>();
             for (int i = 0; i < 5; i++)
             {
                 tasks.Add(Task.Run(NewClient));
                 //Thread.Sleep(1000); //launch new client connection every 1 sec
             }
 
-            Task.WaitAll(tasks.ToArray());
+            Task.WaitAll(tasks.ToArray());*/
         }
 
         private void NewClient()
